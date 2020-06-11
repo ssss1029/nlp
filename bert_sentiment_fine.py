@@ -44,7 +44,7 @@ def train_one_epoch(model, lossfn, optimizer, dataset, batch_size=32):
     
     return train_loss, train_acc
 
-def eval(model, lossfn, optimizer, dataset, batch_size=32):
+def evaluate(model, lossfn, optimizer, dataset, batch_size=32):
     generator = torch.utils.data.DataLoader(
         dataset, batch_size=batch_size, shuffle=True
     )
@@ -52,7 +52,7 @@ def eval(model, lossfn, optimizer, dataset, batch_size=32):
     loss, acc = 0.0, 0.0
     with torch.no_grad():
         for batch, labels in tqdm(generator):
-            batch, labels = batch.to(device), labels.to(device)
+            batch, labels = batch.cuda(), labels.cuda()
             logits = model(batch)[0]
             error = lossfn(logits, labels)
             loss += error.item()
@@ -65,7 +65,7 @@ def eval(model, lossfn, optimizer, dataset, batch_size=32):
 
 def main(num_epochs, batch_size, save_dir):
 
-    if os.path.exists:
+    if os.path.exists(save_dir):
         resp = None
         while resp not in {"yes", "no", "y", "n"}:
             resp = input(f"{save_dir} already exists. Overwrite contents? [y/n]: ")
@@ -95,11 +95,11 @@ def main(num_epochs, batch_size, save_dir):
         train_loss, train_acc = train_one_epoch(
             model, lossfn, optimizer, train_data, batch_size=batch_size
         )
-        # val_loss, val_acc = evaluate_one_epoch(
+        # val_loss, val_acc = evaluate(
         #     model, lossfn, optimizer, devset, batch_size=batch_size
         # )
-        test_loss, test_acc = evaluate_one_epoch(
-            model, lossfn, optimizer, testset, batch_size=batch_size
+        test_loss, test_acc = evaluate(
+            model, lossfn, optimizer, test_data, batch_size=batch_size
         )
 
         print(f"Train Loss: {train_loss} | Test Loss: {test_loss} | Test Acc: {test_acc}")
@@ -107,7 +107,7 @@ def main(num_epochs, batch_size, save_dir):
         if save_dir != None:
             print("Saving Model")
             torch.save(
-                model,
+                model.state_dict(),
                 os.path.join(save_dir, "bert-large-uncased__sst5__fine.pth")
             )
 
