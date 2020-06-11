@@ -6,14 +6,11 @@ From https://github.com/munikarmanish/bert-sentiment/blob/master/bert_sentiment/
 
 import pytreebank
 import torch
-from loguru import logger
-from pytorch_transformers import BertTokenizer
+from transformers import BertTokenizer
 from torch.utils.data import Dataset
 
-logger.info("Loading the tokenizer")
 tokenizer = BertTokenizer.from_pretrained("bert-large-uncased")
 
-logger.info("Loading SST")
 sst = pytreebank.load_sst()
 
 
@@ -54,10 +51,8 @@ class SSTDataset(Dataset):
             binary: bool
                 If true, use binary labels. Else, use fine-grained.
         """
-        logger.info(f"Loading SST {split} set")
         self.sst = sst[split]
 
-        logger.info("Tokenizing")
         if root and binary:
             self.data = [
                 (
