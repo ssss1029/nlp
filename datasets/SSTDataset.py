@@ -18,9 +18,14 @@ def rpad(array, n=70):
     """Right padding."""
     current_len = len(array)
     if current_len > n:
-        return array[: n - 1]
+        return array[: n]
     extra = n - current_len
-    return array + ([0] * extra)
+    retval =  array + ([0] * extra)
+
+    if len(retval) != n:
+        print("ERROR HERE", array)
+    
+    return retval 
 
 
 def get_binary_label(label):
@@ -97,4 +102,9 @@ class SSTDataset(Dataset):
     def __getitem__(self, index):
         X, y = self.data[index]
         X = torch.tensor(X)
+        if X.shape[0] != 66:
+            print(X.shape)
+            print(X, self.data[index])
+            print(index)
+            print(len(self))
         return X, y

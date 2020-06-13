@@ -7,10 +7,12 @@ import argparse
 import os
 import torch
 
-from transformers import BertConfig, BertForSequenceClassification
+from transformers import BertConfig, BertForSequenceClassification, IS_CUSTOM
 from tqdm import tqdm
 
 from datasets.SSTDataset import SSTDataset
+
+assert IS_CUSTOM()
 
 def train_one_epoch(model, lossfn, optimizer, dataset, batch_size=32):
     generator = torch.utils.data.DataLoader(
