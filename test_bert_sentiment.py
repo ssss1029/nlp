@@ -10,7 +10,6 @@ import torch
 from transformers import BertConfig, BertForSequenceClassification, BertTokenizer
 from tqdm import tqdm
 
-from datasets.SSTDataset import SSTDataset
 
 def rpad(array, n=70):
     """Right padding."""
@@ -33,20 +32,20 @@ def main(weights):
 
     print("Beginning testing")
 
-    input_sentence = input("Input sentence: ")
+    input_sentence = "This movie was amazing"
     while input_sentence != "q":
         batch = torch.tensor(rpad(tokenizer.encode('[CLS] ' + input_sentence + ' [SEP]'))).unsqueeze(0)
-        print(batch)
         logits = model(batch)[0]
         sentiment_softmax = torch.nn.functional.softmax(logits)
-        print(sentiment_softmax)
+        print(list(sentiment_softmax))
+        print("------------------------------------------------------")
         
         # Next iteration
         input_sentence = input("Input sentence: ")
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description='Bert on SST-5')
-    parser.add_argument('--weights', default='checkpoints/TEMP/bert-large-uncased__sst5__fine.pth', type=str)
+    parser.add_argument('--weights', default='checkpoints/TEMP_002/bert-large-uncased__sst5__fine.pth', type=str)
 
     args = parser.parse_args()
     argsdict = vars(args)

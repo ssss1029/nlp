@@ -157,6 +157,12 @@ class BertEmbeddings(nn.Module):
         self.dropout = nn.Dropout(config.hidden_dropout_prob)
 
     def forward(self, input_ids=None, token_type_ids=None, position_ids=None, inputs_embeds=None):
+
+        print("BertEmbeddings: input_ids.shape", input_ids.shape if torch.is_tensor(input_ids) else None)
+        print("BertEmbeddings: token_type_ids.shape", token_type_ids.shape if torch.is_tensor(token_type_ids) else None)
+        print("BertEmbeddings: position_ids.shape", position_ids.shape if torch.is_tensor(position_ids) else None)
+        print("BertEmbeddings: inputs_embeds.shape", inputs_embeds.shape if torch.is_tensor(inputs_embeds) else None)
+
         if input_ids is not None:
             input_shape = input_ids.size()
         else:
@@ -175,10 +181,16 @@ class BertEmbeddings(nn.Module):
         position_embeddings = self.position_embeddings(position_ids)
         token_type_embeddings = self.token_type_embeddings(token_type_ids)
 
+        # print("Embeddings: ")
+        # print(inputs_embeds.shape, inputs_embeds)
+        # print(position_embeddings.shape, position_embeddings)
+        # print(token_type_embeddings.shape, token_type_embeddings)
+        # print("------------------------------------------------------------------------------------------------------")
+
         embeddings = inputs_embeds + position_embeddings + token_type_embeddings
         embeddings = self.LayerNorm(embeddings)
         embeddings = self.dropout(embeddings)
-        return embeddings
+        return embeddings # (batch_size, sequence_length, hidden_size=1024)
 
 
 class BertSelfAttention(nn.Module):
@@ -227,9 +239,17 @@ class BertSelfAttention(nn.Module):
             mixed_key_layer = self.key(hidden_states)
             mixed_value_layer = self.value(hidden_states)
 
+        print("mixed_query_layer.shape", mixed_query_layer.shape)
+        print("mixed_key_layer.shape", mixed_key_layer.shape)
+        print("mixed_value_layer.shape", mixed_value_layer.shape)
+
         query_layer = self.transpose_for_scores(mixed_query_layer)
         key_layer = self.transpose_for_scores(mixed_key_layer)
         value_layer = self.transpose_for_scores(mixed_value_layer)
+
+        print("query_layer.shape", query_layer.shape)
+        print("key_layer.shape", key_layer.shape)
+        print("value_layer.shape", value_layer.shape)
 
         # Take the dot product between "query" and "key" to get the raw attention scores.
         attention_scores = torch.matmul(query_layer, key_layer.transpose(-1, -2))
@@ -377,6 +397,8 @@ class BertLayer(nn.Module):
             attention_output = cross_attention_outputs[0]
             outputs = outputs + cross_attention_outputs[1:]  # add cross attentions if we output attention weights
 
+        print("attention_output.shape", attention_output.shape)
+
         intermediate_output = self.intermediate(attention_output)
         layer_output = self.output(intermediate_output, attention_output)
         outputs = (layer_output,) + outputs
@@ -408,6 +430,8 @@ class BertEncoder(nn.Module):
                 hidden_states, attention_mask, head_mask[i], encoder_hidden_states, encoder_attention_mask
             )
             hidden_states = layer_outputs[0]
+
+            print(f"Layer {i}: hidden_states.shape = ", hidden_states.shape)
 
             if self.output_attentions:
                 all_attentions = all_attentions + (layer_outputs[1],)
@@ -723,9 +747,13 @@ class BertModel(BertPreTrainedModel):
         # and head_mask is converted to shape [num_hidden_layers x batch x num_heads x seq_length x seq_length]
         head_mask = self.get_head_mask(head_mask, self.config.num_hidden_layers)
 
+        # SHAPE: (batch_size, seq_len, hidden_size=1024)
         embedding_output = self.embeddings(
             input_ids=input_ids, position_ids=position_ids, token_type_ids=token_type_ids, inputs_embeds=inputs_embeds
         )
+        print("embedding_output.shape = ", embedding_output.shape)
+
+        # Tuple, first element is the sequence output. Can optionally output hidden states and attentions
         encoder_outputs = self.encoder(
             embedding_output,
             attention_mask=extended_attention_mask,
@@ -733,8 +761,13 @@ class BertModel(BertPreTrainedModel):
             encoder_hidden_states=encoder_hidden_states,
             encoder_attention_mask=encoder_extended_attention_mask,
         )
+        # SHAPE : (batch_size, seq_length, hidden_size)
         sequence_output = encoder_outputs[0]
+        print("sequence_output.shape = ", sequence_output.shape)
+
+        # SHAPE : (batch_size, hidden_size)
         pooled_output = self.pooler(sequence_output)
+        print("pooled_output.shape = ", pooled_output.shape)
 
         outputs = (sequence_output, pooled_output,) + encoder_outputs[
             1:
